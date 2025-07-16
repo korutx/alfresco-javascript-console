@@ -1,0 +1,126 @@
+{
+  "Alfresco Search": {
+    "prefix": "alf-search",
+    "body": [
+      "var results = search.luceneSearch(\"${1:PATH:\\\"/app:company_home//*\\\"}\");",
+      "for (var i = 0; i < results.length; i++) {",
+      "    var node = results[i];",
+      "    print(\"Node: \" + node.name + \" (\" + node.nodeRef + \")\");",
+      "    $0",
+      "}"
+    ],
+    "description": "Alfresco Lucene search template"
+  },
+  "Alfresco Node Properties": {
+    "prefix": "alf-props",
+    "body": [
+      "var node = search.findNode(\"${1:workspace://SpacesStore/node-id}\");",
+      "if (node != null) {",
+      "    var props = node.properties;",
+      "    for (var key in props) {",
+      "        print(key + \": \" + props[key]);",
+      "    }",
+      "    $0",
+      "}"
+    ],
+    "description": "Display all properties of an Alfresco node"
+  },
+  "Alfresco Create Node": {
+    "prefix": "alf-create",
+    "body": [
+      "var parent = search.findNode(\"${1:workspace://SpacesStore/parent-id}\");",
+      "if (parent != null) {",
+      "    var node = parent.createNode(\"${2:nodeName}\", \"${3:cm:content}\");",
+      "    node.properties[\"cm:title\"] = \"${4:Node Title}\";",
+      "    node.properties[\"cm:description\"] = \"${5:Node Description}\";",
+      "    node.save();",
+      "    print(\"Created node: \" + node.nodeRef);",
+      "    $0",
+      "}"
+    ],
+    "description": "Create a new Alfresco node"
+  },
+  "Alfresco Query People": {
+    "prefix": "alf-people",
+    "body": [
+      "var people = search.luceneSearch(\"TYPE:\\\"{http://www.alfresco.org/model/content/1.0}person\\\"\");",
+      "for (var i = 0; i < people.length; i++) {",
+      "    var person = people[i];",
+      "    print(\"User: \" + person.properties[\"cm:userName\"] + \" (\" + person.properties[\"cm:firstName\"] + \" \" + person.properties[\"cm:lastName\"] + \")\");",
+      "    $0",
+      "}"
+    ],
+    "description": "Query all people in Alfresco"
+  },
+  "Alfresco Print Output": {
+    "prefix": "alf-print",
+    "body": [
+      "print(\"${1:Message to output}\");"
+    ],
+    "description": "Print output to console"
+  },
+  "Alfresco Get Company Home": {
+    "prefix": "alf-home",
+    "body": [
+      "var companyHome = search.findNode(\"workspace://SpacesStore/\" + companyhome.nodeRef.id);",
+      "print(\"Company Home: \" + companyHome.name + \" (\" + companyHome.nodeRef + \")\");",
+      "$0"
+    ],
+    "description": "Get Company Home node"
+  },
+  "Alfresco Workflow": {
+    "prefix": "alf-workflow",
+    "body": [
+      "var workflows = workflow.getActiveWorkflows();",
+      "for (var i = 0; i < workflows.length; i++) {",
+      "    var wf = workflows[i];",
+      "    print(\"Workflow: \" + wf.id + \" - \" + wf.description);",
+      "    $0",
+      "}"
+    ],
+    "description": "Query active workflows"
+  },
+  "Alfresco Permissions": {
+    "prefix": "alf-perms",
+    "body": [
+      "var node = search.findNode(\"${1:workspace://SpacesStore/node-id}\");",
+      "if (node != null) {",
+      "    var permissions = node.getPermissions();",
+      "    for (var i = 0; i < permissions.length; i++) {",
+      "        print(\"Permission: \" + permissions[i]);",
+      "    }",
+      "    $0",
+      "}"
+    ],
+    "description": "Display node permissions"
+  },
+  "Alfresco Aspects": {
+    "prefix": "alf-aspects",
+    "body": [
+      "var node = search.findNode(\"${1:workspace://SpacesStore/node-id}\");",
+      "if (node != null) {",
+      "    var aspects = node.aspects;",
+      "    for (var i = 0; i < aspects.length; i++) {",
+      "        print(\"Aspect: \" + aspects[i]);",
+      "    }",
+      "    $0",
+      "}"
+    ],
+    "description": "Display node aspects"
+  },
+  "Alfresco Children": {
+    "prefix": "alf-children",
+    "body": [
+      "var parent = search.findNode(\"${1:workspace://SpacesStore/parent-id}\");",
+      "if (parent != null) {",
+      "    var children = parent.children;",
+      "    for (var i = 0; i < children.length; i++) {",
+      "        var child = children[i];",
+      "        print(\"Child: \" + child.name + \" (\" + child.nodeRef + \")\");",
+      "    }",
+      "    $0",
+      "}"
+    ],
+    "description": "List children of a node"
+  }
+}

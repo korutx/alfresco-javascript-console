@@ -1,0 +1,130 @@
+{
+  "name": "alfresco-javascript-console",
+  "displayName": "Alfresco Javascript Console",
+  "description": " write and run JavaScript scripts against an Alfresco repository directly from the IDE",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/korutx/alfresco-javascript-console.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.102.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:javascript"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "alfresco-javascript-console.runScript",
+        "title": "Run in Alfresco",
+        "icon": "$(play)"
+      },
+      {
+        "command": "alfresco-javascript-console.configureServer",
+        "title": "Configure Alfresco Server"
+      },
+      {
+        "command": "alfresco-javascript-console.openPanel",
+        "title": "Open Alfresco Console Panel"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "alfresco-javascript-console.runScript",
+          "when": "resourceExtname == .js || resourceExtname == .ts",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "alfresco-javascript-console.runScript",
+          "when": "resourceExtname == .js || resourceExtname == .ts"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "alfresco-javascript-console.runScript",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorTextFocus && (resourceExtname == .js || resourceExtname == .ts)"
+      }
+    ],
+    "configuration": {
+      "title": "Alfresco JS Console",
+      "properties": {
+        "alfrescoJsConsole.server.url": {
+          "type": "string",
+          "default": "",
+          "description": "Alfresco server URL (e.g., https://your-server.com)"
+        },
+        "alfrescoJsConsole.server.username": {
+          "type": "string",
+          "default": "",
+          "description": "Username for Alfresco authentication"
+        },
+        "alfrescoJsConsole.execution.defaultTransaction": {
+          "type": "string",
+          "enum": ["readonly", "readwrite"],
+          "default": "readonly",
+          "description": "Default transaction type for script execution"
+        },
+        "alfrescoJsConsole.execution.defaultRunAs": {
+          "type": "string",
+          "default": "",
+          "description": "Default user to run scripts as"
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "alfresco-console",
+          "title": "Alfresco Console",
+          "icon": "$(console)"
+        }
+      ]
+    },
+    "views": {
+      "alfresco-console": [
+        {
+          "id": "alfresco-console-panel",
+          "name": "Script Parameters",
+          "type": "webview"
+        }
+      ]
+    },
+    "snippets": [
+      {
+        "language": "javascript",
+        "path": "./snippets/alfresco-javascript.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.102.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
+    "eslint": "^9.25.1",
+    "typescript": "^5.8.3",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}
