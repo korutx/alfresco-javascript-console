@@ -2,7 +2,7 @@
   "name": "alfresco-javascript-console",
   "displayName": "Alfresco Javascript Console",
   "description": " write and run JavaScript scripts against an Alfresco repository directly from the IDE",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "repository": {
     "type": "git",
     "url": "https://github.com/korutx/alfresco-javascript-console.git"
@@ -64,7 +64,13 @@
         "alfrescoJsConsole.server.url": {
           "type": "string",
           "default": "",
-          "description": "Alfresco server URL (e.g., https://your-server.com)"
+          "description": "Alfresco server URL. Use the repo URL (e.g., https://your-server.com/alfresco) for direct access, or the Share proxy URL (e.g., https://your-server.com/share/proxy/alfresco) when going through Share."
+        },
+        "alfrescoJsConsole.server.consoleVariant": {
+          "type": "string",
+          "enum": ["auto", "ootbee", "fme"],
+          "default": "auto",
+          "description": "JavaScript Console variant installed on the server. 'ootbee' for OOTBee/Order of the Bee (actively maintained), 'fme' for the original fme AG console (discontinued), or 'auto' to detect automatically."
         },
         "alfrescoJsConsole.server.username": {
           "type": "string",

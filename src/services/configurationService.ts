@@ -27,6 +27,11 @@ export class ConfigurationService {
 		return password || '';
 	}
 
+	getConsoleVariant(): 'auto' | 'ootbee' | 'fme' {
+		const config = vscode.workspace.getConfiguration(ConfigurationService.CONFIG_SECTION);
+		return config.get<'auto' | 'ootbee' | 'fme'>('server.consoleVariant', 'auto');
+	}
+
 	getDefaultTransaction(): 'readonly' | 'readwrite' {
 		const config = vscode.workspace.getConfiguration(ConfigurationService.CONFIG_SECTION);
 		return config.get<'readonly' | 'readwrite'>('execution.defaultTransaction', 'readonly');

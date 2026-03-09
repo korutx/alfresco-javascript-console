@@ -27,14 +27,100 @@ export interface ExecutionResult {
 	error?: string;
 }
 
+type ConsoleVariant = 'ootbee' | 'fme';
+
 export class AlfrescoApiService {
 	private resultChannels = new Map<string, string>();
 	private pollingStates = new Map<string, { shouldStop: boolean; lastPrintIndex: number }>();
+	private detectedVariant: ConsoleVariant | null = null;
 
 	constructor(
 		private outputService: OutputService,
 		private configurationService: ConfigurationService
 	) {}
+
+	/**
+	 * Build the console base path (everything between serverUrl and /execute or /{id}/executionResult).
+	 * Detects Share proxy URLs and omits the /s/ webscript servlet prefix accordingly.
+	 */
+	private getConsolePath(serverUrl: string, variant: ConsoleVariant): string {
+		const isShareProxy = serverUrl.includes('/share/proxy/alfresco');
+		const prefix = isShareProxy ? '' : '/s';
+		const variantPath = variant === 'ootbee' ? 'ootbee' : 'de/fme';
+		return `${prefix}/${variantPath}/jsconsole`;
+	}
+
+	/**
+	 * Resolve which console variant to use. If configured as "auto", probe the server.
+	 */
+	private async resolveVariant(serverUrl: string, username: string, password: string): Promise<ConsoleVariant> {
+		const configured = this.configurationService.getConsoleVariant();
+		if (configured !== 'auto') {
+			return configured;
+		}
+
+		// Return cached detection
+		if (this.detectedVariant) {
+			return this.detectedVariant;
+		}
+
+		// Probe OOTBee first (actively maintained), then fall back to fme
+		this.outputService.appendLine('Auto-detecting console variant...');
+		for (const variant of ['ootbee', 'fme'] as ConsoleVariant[]) {
+			const ok = await this.probeVariant(serverUrl, username, password, variant);
+			if (ok) {
+				this.detectedVariant = variant;
+				this.outputService.appendLine(`Detected console variant: ${variant}`);
+				return variant;
+			}
+		}
+
+		// Default to ootbee if neither responded
+		this.outputService.appendLine('Could not auto-detect variant, defaulting to ootbee');
+		this.detectedVariant = 'ootbee';
+		return 'ootbee';
+	}
+
+	/**
+	 * Probe a console variant by sending a lightweight request to its execute endpoint.
+	 * Returns true if the server responds (even with an error like 400), false on connection/404 errors.
+	 */
+	private probeVariant(serverUrl: string, username: string, password: string, variant: ConsoleVariant): Promise<boolean> {
+		return new Promise<boolean>((resolve) => {
+			const consolePath = this.getConsolePath(serverUrl, variant);
+			const url = new URL(`${serverUrl}${consolePath}/execute`);
+			const isHttps = url.protocol === 'https:';
+
+			const options = {
+				hostname: url.hostname,
+				port: url.port || (isHttps ? 443 : 80),
+				path: url.pathname,
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'Content-Length': 2,
+					'Authorization': 'Basic ' + Buffer.from(`${username}:${password}`).toString('base64')
+				},
+				rejectUnauthorized: false,
+				timeout: 5000
+			};
+
+			const client = isHttps ? https : http;
+			const req = client.request(options, (res) => {
+				// Consume response data to free the socket
+				res.on('data', () => {});
+				res.on('end', () => {
+					// Any response except 404 means the endpoint exists
+					resolve(res.statusCode !== 404);
+				});
+			});
+
+			req.on('error', () => resolve(false));
+			req.on('timeout', () => { req.destroy(); resolve(false); });
+			req.write('{}');
+			req.end();
+		});
+	}
 
 	async executeScript(script: string, params?: Partial<ScriptExecutionParams>): Promise<void> {
 		const serverUrl = this.configurationService.getServerUrl();
@@ -45,6 +131,9 @@ export class AlfrescoApiService {
 			this.outputService.appendLine('Error: Server configuration missing');
 			return;
 		}
+
+		const variant = await this.resolveVariant(serverUrl, username, password);
+		const consolePath = this.getConsolePath(serverUrl, variant);
 
 		const resultChannel = Date.now().toString();
 		this.resultChannels.set(resultChannel, resultChannel);
@@ -66,10 +155,10 @@ export class AlfrescoApiService {
 		this.outputService.appendLine('');
 
 		// Start polling immediately, then execute script
-		this.fetchExecutionResult(serverUrl, username, password, resultChannel);
-		
+		this.fetchExecutionResult(serverUrl, username, password, resultChannel, consolePath);
+
 		try {
-			await this.executeScriptRequest(serverUrl, username, password, executionParams, resultChannel);
+			await this.executeScriptRequest(serverUrl, username, password, executionParams, resultChannel, consolePath);
 		} catch (error) {
 			this.outputService.appendLine(`❌ Error: ${error instanceof Error ? error.message : String(error)}`);
 		} finally {
@@ -86,10 +175,11 @@ export class AlfrescoApiService {
 		username: string,
 		password: string,
 		params: ScriptExecutionParams,
-		resultChannel: string
+		resultChannel: string,
+		consolePath: string
 	): Promise<void> {
 		return new Promise<void>((resolve, reject) => {
-			const url = new URL(`${serverUrl}/s/de/fme/jsconsole/execute`);
+			const url = new URL(`${serverUrl}${consolePath}/execute`);
 			const isHttps = url.protocol === 'https:';
 			
 			const postData = JSON.stringify({
@@ -244,7 +334,8 @@ export class AlfrescoApiService {
 		serverUrl: string,
 		username: string,
 		password: string,
-		resultChannel: string
+		resultChannel: string,
+		consolePath: string
 	): void {
 		const pollResult = () => {
 			const pollingState = this.pollingStates.get(resultChannel);
@@ -255,7 +346,7 @@ export class AlfrescoApiService {
 			}
 
 			console.log('Polling result for channel:', resultChannel);
-			const url = new URL(`${serverUrl}/s/de/fme/jsconsole/${resultChannel}/executionResult`);
+			const url = new URL(`${serverUrl}${consolePath}/${resultChannel}/executionResult`);
 			const isHttps = url.protocol === 'https:';
 
 			const options = {
