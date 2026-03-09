@@ -3,21 +3,25 @@ import { AlfrescoApiService } from './services/alfrescoApiService';
 import { OutputService } from './services/outputService';
 import { ConfigurationService } from './services/configurationService';
 import { WebviewPanelProvider } from './providers/webviewPanelProvider';
+import { StatusBarProvider } from './providers/statusBarProvider';
+import { addProfile, switchProfile, editProfile, deleteProfile } from './commands/profileCommands';
 
 let alfrescoApiService: AlfrescoApiService;
 let outputService: OutputService;
 let configurationService: ConfigurationService;
 let webviewPanelProvider: WebviewPanelProvider;
+let statusBarProvider: StatusBarProvider;
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 	console.log('Alfresco JavaScript Console extension is now active!');
 
 	// Initialize services
 	outputService = new OutputService();
 	configurationService = new ConfigurationService();
-	configurationService.setContext(context);
+	await configurationService.setContext(context);
 	alfrescoApiService = new AlfrescoApiService(outputService, configurationService);
 	webviewPanelProvider = new WebviewPanelProvider(context.extensionUri, alfrescoApiService);
+	statusBarProvider = new StatusBarProvider(configurationService);
 
 	// Register webview provider
 	context.subscriptions.push(
@@ -37,7 +41,32 @@ export function activate(context: vscode.ExtensionContext) {
 		await vscode.commands.executeCommand('workbench.view.extension.alfresco-console');
 	});
 
-	context.subscriptions.push(runScriptCommand, configureServerCommand, openPanelCommand);
+	const addProfileCommand = vscode.commands.registerCommand('alfresco-javascript-console.addProfile', async () => {
+		await addProfile(configurationService);
+	});
+
+	const switchProfileCommand = vscode.commands.registerCommand('alfresco-javascript-console.switchProfile', async () => {
+		await switchProfile(configurationService);
+	});
+
+	const editProfileCommand = vscode.commands.registerCommand('alfresco-javascript-console.editProfile', async () => {
+		await editProfile(configurationService);
+	});
+
+	const deleteProfileCommand = vscode.commands.registerCommand('alfresco-javascript-console.deleteProfile', async () => {
+		await deleteProfile(configurationService);
+	});
+
+	context.subscriptions.push(
+		runScriptCommand,
+		configureServerCommand,
+		openPanelCommand,
+		addProfileCommand,
+		switchProfileCommand,
+		editProfileCommand,
+		deleteProfileCommand,
+		statusBarProvider
+	);
 }
 
 async function runCurrentScript() {
@@ -55,12 +84,18 @@ async function runCurrentScript() {
 
 	const isConfigured = await configurationService.isServerConfigured();
 	if (!isConfigured) {
+		const profiles = configurationService.getProfiles();
+		const actions = profiles.length > 0
+			? ['Add Profile', 'Switch Profile']
+			: ['Add Profile'];
 		const result = await vscode.window.showWarningMessage(
-			'Alfresco server not configured. Would you like to configure it now?',
-			'Configure'
+			'Alfresco server not configured.',
+			...actions
 		);
-		if (result === 'Configure') {
-			await configureServer();
+		if (result === 'Add Profile') {
+			await addProfile(configurationService);
+		} else if (result === 'Switch Profile') {
+			await switchProfile(configurationService);
 		}
 		return;
 	}
@@ -69,36 +104,30 @@ async function runCurrentScript() {
 }
 
 async function configureServer() {
-	const serverUrl = await vscode.window.showInputBox({
-		prompt: 'Enter Alfresco server URL',
-		placeHolder: 'https://your-alfresco-server.com/alfresco',
-		value: configurationService.getServerUrl()
-	});
+	const profiles = configurationService.getProfiles();
 
-	if (!serverUrl) {
+	if (profiles.length === 0) {
+		await addProfile(configurationService);
 		return;
 	}
 
-	const username = await vscode.window.showInputBox({
-		prompt: 'Enter username',
-		value: configurationService.getUsername()
-	});
+	const pick = await vscode.window.showQuickPick(
+		[
+			{ label: '$(add) Add Profile', action: 'add' },
+			{ label: '$(edit) Edit Profile', action: 'edit' },
+			{ label: '$(server) Switch Profile', action: 'switch' },
+			{ label: '$(trash) Delete Profile', action: 'delete' },
+		],
+		{ placeHolder: 'Server profile management' }
+	);
+	if (!pick) { return; }
 
-	if (!username) {
-		return;
+	switch (pick.action) {
+		case 'add': await addProfile(configurationService); break;
+		case 'edit': await editProfile(configurationService); break;
+		case 'switch': await switchProfile(configurationService); break;
+		case 'delete': await deleteProfile(configurationService); break;
 	}
-
-	const password = await vscode.window.showInputBox({
-		prompt: 'Enter password',
-		password: true
-	});
-
-	if (!password) {
-		return;
-	}
-
-	await configurationService.saveServerConfig(serverUrl, username, password);
-	vscode.window.showInformationMessage('Alfresco server configuration saved!');
 }
 
 export function deactivate() {

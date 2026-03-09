@@ -32,7 +32,7 @@ type ConsoleVariant = 'ootbee' | 'fme';
 export class AlfrescoApiService {
 	private resultChannels = new Map<string, string>();
 	private pollingStates = new Map<string, { shouldStop: boolean; lastPrintIndex: number }>();
-	private detectedVariant: ConsoleVariant | null = null;
+	private detectedVariants = new Map<string, ConsoleVariant>();
 
 	constructor(
 		private outputService: OutputService,
@@ -51,7 +51,20 @@ export class AlfrescoApiService {
 	}
 
 	/**
+	 * Clear cached variant detection results.
+	 * If profileId is provided, clears only that profile's cache; otherwise clears all.
+	 */
+	clearVariantCache(profileId?: string): void {
+		if (profileId) {
+			this.detectedVariants.delete(profileId);
+		} else {
+			this.detectedVariants.clear();
+		}
+	}
+
+	/**
 	 * Resolve which console variant to use. If configured as "auto", probe the server.
+	 * Results are cached per profile ID (or per serverUrl for legacy config).
 	 */
 	private async resolveVariant(serverUrl: string, username: string, password: string): Promise<ConsoleVariant> {
 		const configured = this.configurationService.getConsoleVariant();
@@ -59,9 +72,13 @@ export class AlfrescoApiService {
 			return configured;
 		}
 
+		const activeProfile = this.configurationService.getActiveProfile();
+		const cacheKey = activeProfile?.id ?? serverUrl;
+
 		// Return cached detection
-		if (this.detectedVariant) {
-			return this.detectedVariant;
+		const cached = this.detectedVariants.get(cacheKey);
+		if (cached) {
+			return cached;
 		}
 
 		// Probe OOTBee first (actively maintained), then fall back to fme
@@ -69,7 +86,7 @@ export class AlfrescoApiService {
 		for (const variant of ['ootbee', 'fme'] as ConsoleVariant[]) {
 			const ok = await this.probeVariant(serverUrl, username, password, variant);
 			if (ok) {
-				this.detectedVariant = variant;
+				this.detectedVariants.set(cacheKey, variant);
 				this.outputService.appendLine(`Detected console variant: ${variant}`);
 				return variant;
 			}
@@ -77,7 +94,7 @@ export class AlfrescoApiService {
 
 		// Default to ootbee if neither responded
 		this.outputService.appendLine('Could not auto-detect variant, defaulting to ootbee');
-		this.detectedVariant = 'ootbee';
+		this.detectedVariants.set(cacheKey, 'ootbee');
 		return 'ootbee';
 	}
 

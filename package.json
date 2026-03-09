@@ -2,7 +2,7 @@
   "name": "alfresco-javascript-console",
   "displayName": "Alfresco Javascript Console",
   "description": " write and run JavaScript scripts against an Alfresco repository directly from the IDE",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "repository": {
     "type": "git",
     "url": "https://github.com/korutx/alfresco-javascript-console.git"
@@ -33,6 +33,22 @@
       {
         "command": "alfresco-javascript-console.openPanel",
         "title": "Open Alfresco Console Panel"
+      },
+      {
+        "command": "alfresco-javascript-console.addProfile",
+        "title": "Alfresco: Add Server Profile"
+      },
+      {
+        "command": "alfresco-javascript-console.switchProfile",
+        "title": "Alfresco: Switch Server Profile"
+      },
+      {
+        "command": "alfresco-javascript-console.editProfile",
+        "title": "Alfresco: Edit Server Profile"
+      },
+      {
+        "command": "alfresco-javascript-console.deleteProfile",
+        "title": "Alfresco: Delete Server Profile"
       }
     ],
     "menus": {
