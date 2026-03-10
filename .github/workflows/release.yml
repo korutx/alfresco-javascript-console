@@ -17,9 +17,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           registry-url: https://registry.npmjs.org
+
+      - name: Upgrade npm for trusted publishing (requires >= 11.5.1)
+        run: npm install -g npm@latest
 
       - run: npm ci
 
@@ -39,9 +42,7 @@ jobs:
 
       - name: Publish CLI to npm
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
+        
       - name: Package VSIX
         run: npx @vscode/vsce package -o alfresco-javascript-console.vsix
 
