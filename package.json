@@ -5,7 +5,7 @@
   "version": "0.0.4",
   "repository": {
     "type": "git",
-    "url": "https://github.com/korutx/alfresco-javascript-console.git"
+    "url": "git+https://github.com/korutx/alfresco-javascript-console.git"
   },
   "license": "MIT",
   "publisher": "korutx",
@@ -20,9 +20,13 @@
   ],
   "main": "./out/extension.js",
   "bin": {
-    "alfresco-js-console": "./dist/cli/index.js"
+    "alfresco-js-console": "dist/cli/index.js"
   },
-  "files": ["out", "dist", "snippets", "sample-scripts", "LICENSE", "README.md"],
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "contributes": {
     "commands": [
       {
@@ -88,7 +92,11 @@
         },
         "alfrescoJsConsole.server.consoleVariant": {
           "type": "string",
-          "enum": ["auto", "ootbee", "fme"],
+          "enum": [
+            "auto",
+            "ootbee",
+            "fme"
+          ],
           "default": "auto",
           "description": "JavaScript Console variant installed on the server. 'ootbee' for OOTBee/Order of the Bee (actively maintained), 'fme' for the original fme AG console (discontinued), or 'auto' to detect automatically."
         },
@@ -99,7 +107,10 @@
         },
         "alfrescoJsConsole.execution.defaultTransaction": {
           "type": "string",
-          "enum": ["readonly", "readwrite"],
+          "enum": [
+            "readonly",
+            "readwrite"
+          ],
           "default": "readonly",
           "description": "Default transaction type for script execution"
         },
