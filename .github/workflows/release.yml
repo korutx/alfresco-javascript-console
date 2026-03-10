@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - name: Type-check extension
+        run: npx tsc -p ./ --noEmit
+
+      - name: Type-check CLI
+        run: npx tsc -p ./tsconfig.cli.json --noEmit
+
+      - name: Build both targets
+        run: npm run build
+
+      - name: Run tests
+        run: xvfb-run -a npm test
+
+      - name: Publish CLI to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Package VSIX
+        run: npx @vscode/vsce package -o alfresco-javascript-console.vsix
+
+      - name: Publish to VS Code Marketplace
+        run: npx @vscode/vsce publish
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: alfresco-javascript-console.vsix
+          generate_release_notes: true

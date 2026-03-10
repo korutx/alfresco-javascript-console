@@ -1,31 +1,9 @@
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
-import { OutputService } from './outputService';
-import { ConfigurationService } from './configurationService';
+import { IOutputService, IConfigurationService, ScriptExecutionParams, ExecutionResult } from '../shared/interfaces';
 
-export interface ScriptExecutionParams {
-	script: string;
-	template?: string;
-	spaceNodeRef?: string;
-	transaction?: 'readonly' | 'readwrite';
-	runas?: string;
-	urlargs?: string;
-	documentNodeRef?: string;
-}
-
-export interface ExecutionResult {
-	printOutput?: string[];
-	result?: any[];
-	dumpOutput?: string[];
-	webscriptPerf?: string;
-	scriptPerf?: string;
-	spaceNodeRef?: string;
-	renderedTemplate?: string;
-	spacePath?: string;
-	scriptOffset?: string | number;
-	error?: string;
-}
+export { ScriptExecutionParams, ExecutionResult } from '../shared/interfaces';
 
 type ConsoleVariant = 'ootbee' | 'fme';
 
@@ -35,8 +13,8 @@ export class AlfrescoApiService {
 	private detectedVariants = new Map<string, ConsoleVariant>();
 
 	constructor(
-		private outputService: OutputService,
-		private configurationService: ConfigurationService
+		private outputService: IOutputService,
+		private configurationService: IConfigurationService
 	) {}
 
 	/**
@@ -139,14 +117,14 @@ export class AlfrescoApiService {
 		});
 	}
 
-	async executeScript(script: string, params?: Partial<ScriptExecutionParams>): Promise<void> {
+	async executeScript(script: string, params?: Partial<ScriptExecutionParams>): Promise<ExecutionResult | undefined> {
 		const serverUrl = this.configurationService.getServerUrl();
 		const username = this.configurationService.getUsername();
 		const password = await this.configurationService.getPassword();
 
 		if (!serverUrl || !username || !password) {
 			this.outputService.appendLine('Error: Server configuration missing');
-			return;
+			return undefined;
 		}
 
 		const variant = await this.resolveVariant(serverUrl, username, password);
@@ -174,10 +152,12 @@ export class AlfrescoApiService {
 		// Start polling immediately, then execute script
 		this.fetchExecutionResult(serverUrl, username, password, resultChannel, consolePath);
 
+		let result: ExecutionResult | undefined;
 		try {
-			await this.executeScriptRequest(serverUrl, username, password, executionParams, resultChannel, consolePath);
+			result = await this.executeScriptRequest(serverUrl, username, password, executionParams, resultChannel, consolePath);
 		} catch (error) {
 			this.outputService.appendLine(`❌ Error: ${error instanceof Error ? error.message : String(error)}`);
+			result = { error: error instanceof Error ? error.message : String(error) };
 		} finally {
 			// Stop polling when script execution completes (success or error)
 			const pollingState = this.pollingStates.get(resultChannel);
@@ -185,6 +165,7 @@ export class AlfrescoApiService {
 				pollingState.shouldStop = true;
 			}
 		}
+		return result;
 	}
 
 	private async executeScriptRequest(
@@ -194,8 +175,8 @@ export class AlfrescoApiService {
 		params: ScriptExecutionParams,
 		resultChannel: string,
 		consolePath: string
-	): Promise<void> {
-		return new Promise<void>((resolve, reject) => {
+	): Promise<ExecutionResult | undefined> {
+		return new Promise<ExecutionResult | undefined>((resolve, reject) => {
 			const url = new URL(`${serverUrl}${consolePath}/execute`);
 			const isHttps = url.protocol === 'https:';
 			
@@ -234,13 +215,13 @@ export class AlfrescoApiService {
 				res.on('end', () => {
 					if (res.statusCode === 200) {
 						try {
-							const result = JSON.parse(responseData);
+							const result = JSON.parse(responseData) as ExecutionResult;
 							// Display the final complete response
 							this.displayFinalExecutionResult(result, resultChannel);
-							resolve();
+							resolve(result);
 						} catch (error) {
 							this.outputService.appendLine('✅ Script execution completed (response parsing failed)');
-							resolve();
+							resolve(undefined);
 						}
 					} else {
 						reject(new Error(`HTTP ${res.statusCode}: ${responseData}`));
@@ -357,12 +338,10 @@ export class AlfrescoApiService {
 		const pollResult = () => {
 			const pollingState = this.pollingStates.get(resultChannel);
 			if (!pollingState || pollingState.shouldStop) {
-				console.log('Stopping polling for channel:', resultChannel);
 				this.pollingStates.delete(resultChannel);
 				return;
 			}
 
-			console.log('Polling result for channel:', resultChannel);
 			const url = new URL(`${serverUrl}${consolePath}/${resultChannel}/executionResult`);
 			const isHttps = url.protocol === 'https:';
 
@@ -388,15 +367,13 @@ export class AlfrescoApiService {
 				res.on('end', () => {
 					// Check if polling should stop before processing
 					if (pollingState.shouldStop) {
-						console.log('Polling stopped during response processing for channel:', resultChannel);
 						return;
 					}
 					
 					if (res.statusCode === 200) {
 						try {
 							const result = JSON.parse(responseData);
-							console.log('Result:', result);
-							
+
 							if (result.printOutput && result.printOutput.length) {
 								// Show only new output (delta)
 								const newOutput = result.printOutput.slice(pollingState.lastPrintIndex);
@@ -405,8 +382,8 @@ export class AlfrescoApiService {
 									pollingState.lastPrintIndex = result.printOutput.length;
 								}
 							}
-						} catch (error) {
-							console.log('Parse error:', error);
+						} catch {
+							// Ignore parse errors during polling
 						}
 					}
 					
@@ -417,8 +394,7 @@ export class AlfrescoApiService {
 				});
 			});
 
-			req.on('error', (error) => {
-				console.log('Result error', error);
+			req.on('error', () => {
 				// Continue polling on error
 				if (!pollingState.shouldStop) {
 					setTimeout(pollResult, 1000);

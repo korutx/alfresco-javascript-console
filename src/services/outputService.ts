@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
+import { IOutputService } from '../shared/interfaces';
 
-export class OutputService {
+export class OutputService implements IOutputService {
 	private outputChannel: vscode.OutputChannel;
 
 	constructor() {

@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
 import { Profile } from '../models/profile';
+import { IConfigurationService } from '../shared/interfaces';
 
-export class ConfigurationService {
+export class ConfigurationService implements IConfigurationService {
 	private static readonly CONFIG_SECTION = 'alfrescoJsConsole';
 	private static readonly SECRET_KEY_PASSWORD = 'alfrescoPassword';
 	private static readonly PROFILES_KEY = 'alfrescoProfiles';
