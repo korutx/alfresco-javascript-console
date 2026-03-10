@@ -39,6 +39,8 @@ jobs:
 
       - name: Publish CLI to npm
         run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Package VSIX
         run: npx @vscode/vsce package -o alfresco-javascript-console.vsix
