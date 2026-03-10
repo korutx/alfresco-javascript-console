@@ -2,7 +2,7 @@
   "name": "alfresco-javascript-console",
   "displayName": "Alfresco Javascript Console",
   "description": " write and run JavaScript scripts against an Alfresco repository directly from the IDE",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/korutx/alfresco-javascript-console.git"
