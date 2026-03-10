@@ -1,35 +1,24 @@
 // Sample Alfresco JavaScript Console Script
-// This script demonstrates basic Alfresco API usage
+// Demonstrates print output, model population, and template usage
 
-// Print a welcome message
-print("🚀 Hello from Alfresco JavaScript Console!");
-print("Extension successfully connected to Alfresco server");
+// --- Print output (streamed in real-time) ---
 
-// Get and display company home information
-try {
-    var companyHome = companyhome;
-    print("📁 Company Home Details:");
-    print("  Name: " + companyHome.name);
-    print("  NodeRef: " + companyHome.nodeRef);
-    print("  Type: " + companyHome.type);
-    
-    // List some children of company home
-    var children = companyHome.children;
-    print("📂 Company Home contains " + children.length + " children:");
-    
-    for (var i = 0; i < Math.min(children.length, 5); i++) {
-        var child = children[i];
-        print("  - " + child.name + " (" + child.type + ")");
-    }
-    
-    // Display current user information
-    print("👤 Current User: " + person.properties["cm:userName"]);
-    
-    // Show server information
-    print("🔧 Server Information:");
-    print("  Date: " + new Date());
-    print("  Script executed successfully!");
-    
-} catch (error) {
-    print("❌ Error: " + error.message);
+print("Hello from Alfresco JavaScript Console!");
+
+var companyHome = companyhome;
+print("Company Home: " + companyHome.name + " (" + companyHome.nodeRef + ")");
+print("Current User: " + person.properties["cm:userName"]);
+
+var children = companyHome.children;
+print("Company Home has " + children.length + " children:");
+
+for (var i = 0; i < Math.min(children.length, 5); i++) {
+    print("  - " + children[i].name + " (" + children[i].type + ")");
 }
+
+// --- Model (for FreeMarker templates) ---
+// Set properties on the `model` object to make them available in templates.
+// Use with: alfresco-js-console run hello-alfresco.js --template hello-alfresco.ftl
+
+model.nodes = children;
+model.user = person.properties["cm:userName"];

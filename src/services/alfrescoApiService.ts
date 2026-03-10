@@ -323,6 +323,11 @@ export class AlfrescoApiService {
 			this.outputService.appendLine(`📝 Result: ${JSON.stringify(result.result, null, 2)}`);
 		}
 
+		if (result.renderedTemplate) {
+			this.outputService.appendLine(`📄 Template Output:`);
+			this.outputService.appendLine(result.renderedTemplate);
+		}
+
 		if (result.error) {
 			this.outputService.appendLine(`❌ Error: ${result.error}`);
 		}

@@ -77,6 +77,7 @@ Global flags:
   --variant <auto|ootbee|fme>   Console variant override
   --transaction <ro|rw>         Transaction type (readonly|readwrite)
   --runas <user>                Run-as user override
+  --template <file>             FreeMarker template file for output formatting
   --help                        Show this help
   --version                     Show version
 `);
@@ -181,9 +182,27 @@ async function runCommand(parsed: ParsedArgs): Promise<void> {
 		transaction = transactionFlag;
 	}
 
+	// Read FreeMarker template if provided
+	let template: string | undefined;
+	const templateFile = flag(parsed.flags, 'template');
+	if (templateFile) {
+		try {
+			template = fs.readFileSync(templateFile, 'utf-8');
+		} catch (err) {
+			const msg = `Error: Cannot read template file '${templateFile}': ${err instanceof Error ? err.message : String(err)}`;
+			if (jsonMode) {
+				process.stdout.write(JSON.stringify({ success: false, error: msg }) + '\n');
+			} else {
+				process.stderr.write(msg + '\n');
+			}
+			process.exit(2);
+		}
+	}
+
 	const result = await apiService.executeScript(script, {
 		transaction,
 		runas: flag(parsed.flags, 'runas'),
+		template,
 	});
 
 	if (jsonMode) {
@@ -191,6 +210,7 @@ async function runCommand(parsed: ParsedArgs): Promise<void> {
 			success: !result?.error,
 			printOutput: result?.printOutput ?? [],
 			result: result?.result ?? [],
+			renderedTemplate: result?.renderedTemplate ?? null,
 			scriptPerf: result?.scriptPerf ?? null,
 			webscriptPerf: result?.webscriptPerf ?? null,
 			spacePath: result?.spacePath ?? null,
