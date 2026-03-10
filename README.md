@@ -1,130 +1,130 @@
-# Alfresco JavaScript Console for VS Code
+# Alfresco JavaScript Console
 
-A powerful VS Code extension that brings the Alfresco JavaScript Console directly into your IDE, allowing you to write and execute JavaScript scripts against an Alfresco repository without leaving your development environment.
+Run JavaScript scripts against an Alfresco repository from VS Code or the command line.
 
-## Features
+Supports both [OOTBee JavaScript Console](https://github.com/AlfrescoLabs/ootbee-support-tools) (actively maintained) and the original fme AG JavaScript Console, with automatic variant detection.
 
-- 🚀 **Script Execution** - Run JavaScript scripts directly against your Alfresco server
-- 📊 **Real-time Output** - Stream script output and execution results in real-time
-- ⚙️ **Parameter Control** - Configure transaction types, run-as users, and execution context
-- 🔧 **Template Support** - Use FreeMarker templates for result formatting
-- 📝 **Code Snippets** - Built-in Alfresco API snippets for faster development
-- 🔒 **Secure Authentication** - Encrypted credential storage using VS Code's secret storage
-🎯 **Context-aware** - Smart activation for JavaScript files with Alfresco-specific commands
+## Installation
 
-## Quick Start
+### VS Code Extension
+
+Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=korutx.alfresco-javascript-console), or search for "Alfresco Javascript Console" in VS Code extensions.
+
+### CLI
+
+```bash
+npm install -g alfresco-javascript-console
+```
+
+## VS Code Extension
+
+### Quick Start
 
 1. Install the extension
-2. Open a JavaScript file
-3. Configure your Alfresco server: `Ctrl+Shift+P` → "Configure Alfresco Server"
-4. Write your Alfresco script using available snippets (type `alf-` for suggestions)
-5. Execute with `Ctrl+Shift+R` or click the "Run in Alfresco" button
+2. Configure your server: `Ctrl+Shift+P` → "Configure Alfresco Server"
+3. Open a JavaScript file and press `Ctrl+Shift+R` to execute
 
-## Requirements
+### Features
 
-- VS Code 1.102.0 or higher
-- Access to an Alfresco server with JavaScript Console web script installed
-- Valid Alfresco user credentials
+- **Script Execution** — Run scripts directly against Alfresco with real-time streaming output
+- **Multi-Profile** — Manage multiple Alfresco server connections and switch between them
+- **Parameter Control** — Configure transaction type, run-as user, space/document context, and FreeMarker templates
+- **Code Snippets** — Built-in Alfresco API snippets (type `alf-` for suggestions)
+- **Secure Storage** — Credentials stored in VS Code's secret storage
 
-## Extension Settings
+### Commands
 
-This extension contributes the following settings:
+| Command | Shortcut | Description |
+|---|---|---|
+| Run Script | `Ctrl+Shift+R` | Execute current script against Alfresco |
+| Configure Server | | Set up server connection |
+| Open Console Panel | | Show execution parameter panel |
+| Add Server Profile | | Add a new server profile |
+| Switch Server Profile | | Switch active profile |
+| Edit Server Profile | | Edit an existing profile |
+| Delete Server Profile | | Remove a profile |
 
-* `alfrescoJsConsole.server.url`: Alfresco server URL (e.g., https://your-server.com/alfresco)
-* `alfrescoJsConsole.server.username`: Username for Alfresco authentication
-* `alfrescoJsConsole.execution.defaultTransaction`: Default transaction type (`readonly` or `readwrite`)
-* `alfrescoJsConsole.execution.defaultRunAs`: Default user to run scripts as
+### Settings
 
-## Usage
+| Setting | Description |
+|---|---|
+| `alfrescoJsConsole.server.url` | Alfresco server URL |
+| `alfrescoJsConsole.server.consoleVariant` | Console variant: `auto`, `ootbee`, or `fme` |
+| `alfrescoJsConsole.server.username` | Username for authentication |
+| `alfrescoJsConsole.execution.defaultTransaction` | Default transaction type (`readonly` / `readwrite`) |
+| `alfrescoJsConsole.execution.defaultRunAs` | Default run-as user |
 
-### Basic Script Execution
+### Code Snippets
 
-1. Open or create a JavaScript file
-2. Write your Alfresco script using the available API objects:
-   - `companyhome` - Company Home node reference
-   - `search` - Search service for finding nodes
-   - `people` - People service for user management
-   - `workflow` - Workflow service
-   - `person` - Current user information
+Type any prefix and press Tab:
 
-### Using Code Snippets
+`alf-search` · `alf-props` · `alf-create` · `alf-people` · `alf-home` · `alf-workflow` · `alf-perms` · `alf-aspects` · `alf-children`
 
-Type any of these prefixes and press Tab:
-- `alf-search` - Lucene search template
-- `alf-props` - Display node properties
-- `alf-create` - Create new node
-- `alf-people` - Query people
-- `alf-home` - Get Company Home
-- `alf-workflow` - Query workflows
-- `alf-perms` - Display permissions
-- `alf-aspects` - Display node aspects
-- `alf-children` - List node children
+## CLI
 
-### Advanced Parameters
+Zero-dependency command-line tool for running Alfresco scripts from the terminal or CI pipelines.
 
-Use the Alfresco Console panel (Activity Bar → Alfresco Console icon) to configure:
-- **Transaction Type**: Choose between read-only and read-write operations
-- **Run As User**: Execute script as a different user
-- **Space/Document References**: Set execution context
-- **FreeMarker Template**: Format output using templates
-- **URL Arguments**: Pass additional parameters
+### Usage
+
+```bash
+# Run a script file
+alfresco-js-console run script.js --server https://localhost:8080/alfresco --username admin --password admin
+
+# Read from stdin
+cat script.js | alfresco-js-console run -
+
+# Use a saved profile
+alfresco-js-console run script.js
+
+# JSON output (for scripting/AI tooling)
+alfresco-js-console run script.js --json
+```
+
+### Profile Management
+
+```bash
+# Add a profile
+alfresco-js-console profile add
+
+# List profiles
+alfresco-js-console profile list
+
+# Switch active profile
+alfresco-js-console profile switch <name>
+
+# Delete a profile
+alfresco-js-console profile delete <name>
+```
+
+Profiles are stored in `~/.alfresco-js-console/config.json` with `0600` permissions.
+
+### Exit Codes
+
+| Code | Meaning |
+|---|---|
+| 0 | Success |
+| 1 | Script execution error |
+| 2 | Configuration or usage error |
 
 ## Sample Script
 
 ```javascript
-// Sample Alfresco script
 print("Hello from Alfresco!");
 
-// Search for content
 var results = search.luceneSearch("TYPE:\"cm:content\"");
 print("Found " + results.length + " content items");
 
-// Display company home info
 print("Company Home: " + companyhome.name);
 print("Current User: " + person.properties["cm:userName"]);
 ```
 
-## Commands
+## Requirements
 
-- `Alfresco: Run Script` (`Ctrl+Shift+R`) - Execute current script
-- `Alfresco: Configure Server` - Set up server connection
-- `Alfresco: Open Console Panel` - Show parameter panel
+- Access to an Alfresco server with JavaScript Console webscript installed
+- Valid Alfresco user credentials
+- VS Code extension: VS Code 1.99.0+
+- CLI: Node.js 20+
 
-## Known Issues
+## License
 
-- Self-signed certificates require manual trust configuration
-- Large result sets may cause output truncation
-- FreeMarker template validation is not performed client-side
-
-## Release Notes
-
-### 0.0.1
-
-- Initial release with core functionality
-- Basic script execution and streaming output
-- Configuration management with secure credential storage
-- Built-in Alfresco API snippets
-- Parameter control panel for advanced execution options
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+MIT
