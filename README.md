@@ -76,6 +76,9 @@ cat script.js | alfresco-js-console run -
 # Use a saved profile
 alfresco-js-console run script.js
 
+# With FreeMarker template
+alfresco-js-console run script.js --template output.ftl
+
 # JSON output (for scripting/AI tooling)
 alfresco-js-console run script.js --json
 ```
@@ -98,6 +101,30 @@ alfresco-js-console profile delete <name>
 
 Profiles are stored in `~/.alfresco-js-console/config.json` with `0600` permissions.
 
+### FreeMarker Templates
+
+Pass a FreeMarker template file with `--template` to format script output. Populate the template model by setting properties on the `model` object in your script:
+
+**script.js:**
+```javascript
+var children = companyhome.children;
+model.nodes = children;
+model.user = person.properties["cm:userName"];
+```
+
+**output.ftl:**
+```ftl
+User: ${user}
+
+<#list nodes as node>
+  ${node.name} (${node.typeShort}) - ${node.nodeRef}
+</#list>
+```
+
+```bash
+alfresco-js-console run script.js --template output.ftl
+```
+
 ### Exit Codes
 
 | Code | Meaning |
@@ -109,13 +136,20 @@ Profiles are stored in `~/.alfresco-js-console/config.json` with `0600` permissi
 ## Sample Script
 
 ```javascript
+// print() streams output in real-time
 print("Hello from Alfresco!");
-
-var results = search.luceneSearch("TYPE:\"cm:content\"");
-print("Found " + results.length + " content items");
-
 print("Company Home: " + companyhome.name);
 print("Current User: " + person.properties["cm:userName"]);
+
+var children = companyhome.children;
+print("Company Home has " + children.length + " children:");
+for (var i = 0; i < Math.min(children.length, 5); i++) {
+    print("  - " + children[i].name);
+}
+
+// model.* populates FreeMarker template variables
+model.nodes = children;
+model.user = person.properties["cm:userName"];
 ```
 
 ## Requirements
