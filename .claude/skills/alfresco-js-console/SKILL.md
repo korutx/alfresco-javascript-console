@@ -47,7 +47,10 @@ Scripts run in Mozilla Rhino (not V8/Node.js). This means **ES5 syntax only** wi
 ## CLI Usage
 
 ```bash
-# Execute a script file (uses saved profile)
+# Run without installing (npx)
+npx alfresco-javascript-console run script.js
+
+# Execute a script file (uses saved profile, if installed globally)
 alfresco-js-console run script.js
 
 # Inline connection (no profile needed)
